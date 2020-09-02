@@ -27,9 +27,9 @@ class MtbDataProviderWebApis(MtbDataProviderBase):
         super().__init__()
 
     def get_columns(self):
-        return ['osm_name', 'osm_highway', 'osm_incline', 'osm_mtb:scale', 'osm_surface', 'osm_trail_visibility', 'osm_width',
+        return ['osm_uid', 'osm_name', 'osm_highway', 'osm_incline', 'osm_mtb:scale', 'osm_surface', 'osm_trail_visibility', 'osm_width',
         'osm_sac_scale', 'osm_bicycle', 'osm_foot', 'osm_tracktype',
-        'trailforks_title', 'trailforks_difficulty', 'trailforks_trailtype', 'trailforks_biketype', 'trailforks_physical_rating', 'trailforks_ttfs',
+        'trailforks_trailid', 'trailforks_title', 'trailforks_difficulty', 'trailforks_trailtype', 'trailforks_biketype', 'trailforks_physical_rating', 'trailforks_ttfs',
         'trailforks_wet_weather', 'trailforks_season', 'trailforks_condition', 'trailforks_difficulty_votes',
         'trailforks_difficulty_user_avg', 'trailforks_family_friendly', 'trailforks_amtb-rating', 'trailforks_activitytypes']
 
@@ -72,19 +72,6 @@ class MtbDataProviderWebApis(MtbDataProviderBase):
         response = requests.get(url)
         return response
 
-    def create_trailforks_meta(self, top_left, bottom_right, response = None):
-        if response is None:
-            response = fetch_area_from_trailforks(top_left, bottom_right)
-        datas = response.json()['data']
-
-        for data in datas:
-            encoded_path = data['track']['encodedPath']
-            decoded_path = polyline.decode(encoded_path)
-            del data['track']
-            data['positions'] = decoded_path
-
-        return datas
-
     def create_openstreetmap_meta(self, top_left, bottom_right, response = None):
         if response is None:
             response = fetch_area_from_openstreetmap(top_left, bottom_right)
@@ -95,7 +82,7 @@ class MtbDataProviderWebApis(MtbDataProviderBase):
 
         for child in root:
             if (child.tag == 'node'):
-                position_nodes[child.attrib['id']] = {'lat': child.attrib['lat'], 'lon': child.attrib['lon']}
+                position_nodes[child.attrib['id']] = {'lat': child.attrib['lat'], 'lon': child.attrib['lon'], 'uid': child.attrib['uid']}
 
         for child in root:
             if (child.tag == 'way'):
@@ -111,6 +98,19 @@ class MtbDataProviderWebApis(MtbDataProviderBase):
                         mapped_nodes[sub_child.attrib['ref']] = {**node, **metas}
 
         return mapped_nodes
+
+    def create_trailforks_meta(self, top_left, bottom_right, response = None):
+        if response is None:
+            response = fetch_area_from_trailforks(top_left, bottom_right)
+        datas = response.json()['data']
+
+        for data in datas:
+            encoded_path = data['track']['encodedPath']
+            decoded_path = polyline.decode(encoded_path)
+            del data['track']
+            data['positions'] = decoded_path
+
+        return datas
 
     def find_meta_data_for_recording(self, latitudes, longitudes, openstreetmap_meta, trailforks_meta, distance_threshold=10, fill_empties=2):
         closest_items = []

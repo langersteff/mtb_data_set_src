@@ -1,5 +1,6 @@
-import sys
+import sys, os
 import numpy as np
+import glob
 from data_processing.mtb_data_provider_garmin import MtbDataProviderGarmin
 from data_processing.mtb_data_provider_web_apis import MtbDataProviderWebApis
 
@@ -18,6 +19,13 @@ class MtbDataSet:
 
         print("Creating dataset " + output_filename)
 
+        if input_filenames is None:
+            input_filenames = []
+            for input_filepath in glob.glob("../data/*.fit"):
+                basename = os.path.basename(input_filepath)
+                basename_wo_ext = os.path.splitext(basename)[0]
+                input_filenames.append(basename_wo_ext)
+
         # Write header for CSV
         garmin_headers = self.data_provider_garmin.get_columns()
         # openstreetmap_headers = self.data_provider_openstreetmap.get_columns()
@@ -25,11 +33,13 @@ class MtbDataSet:
         # gopro_headers = self.data_provider_gopro.get_columns()
         # label_headers = self.data_provider_label.get_columns()
         data = None
-        headers = np.hstack([garmin_headers, web_apis_headers])#, gopro_headers, label_headers])
+        headers = np.hstack(["input_filename", "rider_id", garmin_headers, web_apis_headers])#, gopro_headers, label_headers])
 
         for input_filename in input_filenames:
 
-            trail_name, rider_id, trail_id = input_filename.split(".")[0].split("_")
+            file_name_parts = input_filename.split("_")
+            trail_name = file_name_parts[0]
+            rider_id = file_name_parts[-1]
 
             # This is the base of all data
             garmin_data = self.data_provider_garmin.create_mapped_data(input_filename, None)
@@ -39,8 +49,10 @@ class MtbDataSet:
             # gopro_data = self.data_provider_gopro.create_mapped_data(input_filename, garmin_data)
             # label_data = self.data_provider_label.create_mapped_data(input_filename, garmin_data)
 
-            data_block = np.hstack([garmin_data, web_apis_data])#, openstreetmap_data, gopro_data, label_data])
-            if data:
+            input_file_column = np.asarray([input_filename] * len(garmin_data)).reshape(len(garmin_data), 1)
+            rider_id_column = np.asarray([rider_id] * len(garmin_data)).reshape(len(garmin_data), 1)
+            data_block = np.hstack([input_file_column, rider_id_column, garmin_data, web_apis_data])#, openstreetmap_data, gopro_data, label_data])
+            if data is not None:
                 data = np.vstack([data, data_block])
             else:
                 data = data_block

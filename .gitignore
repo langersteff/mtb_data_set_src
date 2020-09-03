@@ -3,4 +3,5 @@ node_modules/
 Fi Clustering.ipynb
 FitSDKRelease_21.16.00/
 config.py
-data/**
+data/
+data/*

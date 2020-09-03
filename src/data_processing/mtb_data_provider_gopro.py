@@ -23,27 +23,26 @@ class MtbDataProviderGopro(MtbDataProviderBase):
         return ['gopro_AcclX', 'gopro_AcclY', 'gopro_AcclZ', 'gopro_Latitude', 'gopro_Longitude', 'gopro_Altitude', 'gopro_Speed',
        'gopro_Speed3D', 'gopro_TS', 'gopro_GpsAccuracy', 'gopro_GpsFix', 'gopro_GyroX', 'gopro_GyroY', 'gopro_GyroZ']
 
-    def create_mapped_data(self, input_file_name, garmin_data, gps_accuracy_threshold=300, compare_percentage=50):
-        file_name = '../data/' + input_file_name
+    def create_mapped_data(self, input_file_name, garmin_data, gps_accuracy_threshold=300, compare_percentage=10):
+        garmin_file_name = '../data/' + input_file_name
 
-        glob_file_names = glob.glob(file_name + '*.MP4')
+        glob_file_names = glob.glob(garmin_file_name + '*.MP4')
 
         if not len(glob_file_names):
-            print("No Gopro File found for: ", input_file_name)
+            print("No Gopro File found for: ", garmin_file_name)
             return np.zeros((len(garmin_data), len(self.get_columns())))
         else:
-            file_name = glob_file_names[0].split('.')[0]
+            gopro_file_name = os.path.splitext(glob_file_names[0])[0]
 
-            self.convert_gopro_mp4_file(file_name)
+            self.convert_gopro_mp4_file(gopro_file_name)
             # Find the sync points and return the timestamp delta
-            timestamp_delta = self.find_timestamp_delta(file_name, garmin_data, gps_accuracy_threshold=gps_accuracy_threshold, compare_percentage=compare_percentage)
+            timestamp_delta = self.find_timestamp_delta(gopro_file_name, garmin_data, gps_accuracy_threshold=gps_accuracy_threshold, compare_percentage=compare_percentage)
             # Read the gopro csv files, change the timestamp by timestamp_delta and left join on the garmin timestamp column
-            gopro_data, gopro_prefixed_columns = self.read_gopro_data(file_name, garmin_data, timestamp_delta, gps_accuracy_threshold=gps_accuracy_threshold)
+            gopro_data, gopro_prefixed_columns = self.read_gopro_data(garmin_file_name, gopro_file_name, garmin_data, timestamp_delta, gps_accuracy_threshold=gps_accuracy_threshold)
             # Convert to objects TODO (is this necessary?)
             gopro_data = self.make_gopro_objects(gopro_data, gopro_prefixed_columns)
             # Return the requested columns
             gopro_data = self.get_values_for(gopro_data, self.get_columns())
-
 
             return gopro_data
 
@@ -66,8 +65,8 @@ class MtbDataProviderGopro(MtbDataProviderBase):
         filename_split = file_name.split('_')
         if len(filename_split) == 4:
             print("Found sync timestamp in video filename ... ")
-            garmin_sync_timestamp = garmin_data[0][0]
-            gopro_sync_timestamp = filename_split[-1]
+            garmin_sync_timestamp = float(garmin_data[0][0])
+            gopro_sync_timestamp = float(filename_split[-1])
         else:
             print("Comparing Gopro GPS Data to find a syncing point ... ")
 
@@ -127,11 +126,11 @@ class MtbDataProviderGopro(MtbDataProviderBase):
 
         return garmin_sync_timestamp - gopro_sync_timestamp
 
-    def read_gopro_data(self, file_name, garmin_data, timestamp_delta, gps_accuracy_threshold):
+    def read_gopro_data(self, garmin_file_name, gopro_file_name, garmin_data, timestamp_delta, gps_accuracy_threshold):
         gopro_datas = None
         # read an concatenate gopro datas
         for data_key in ["accl", "gps", "gyro"]:
-            filepathSubCsv = os.path.abspath(file_name + "_gopro-" + data_key + '.csv')
+            filepathSubCsv = os.path.abspath(gopro_file_name + "_gopro-" + data_key + '.csv')
             subValues = pd.read_csv(filepathSubCsv, low_memory=False)
 
             if('GpsAccuracy' in subValues.columns):
@@ -146,12 +145,12 @@ class MtbDataProviderGopro(MtbDataProviderBase):
         gopro_datas['Milliseconds'] = gopro_datas['Milliseconds'] - timestamp_delta
 
         # Read garmin timestamps csv, remove all but the timestamp column, join left, get rid of timestamp columns, return data
-        garmin_csv_data = pd.read_csv(file_name + "-tmp.csv", low_memory=False)
+        garmin_csv_data = pd.read_csv(garmin_file_name + "-tmp.csv", low_memory=False)
         resulting_gopro_data = garmin_csv_data.merge(gopro_datas, left_on='timestamp', right_on='Milliseconds', how='left')
         resulting_gopro_data = resulting_gopro_data.drop(columns=['Milliseconds'])
         resulting_gopro_data = resulting_gopro_data.drop(columns=garmin_csv_data.columns)
 
-        gopro_prefixed_columns = {f'gopro_{k}': v for k, v in resulting_gopro_data.columns}
+        gopro_prefixed_columns = [f'gopro_{v}' for v in resulting_gopro_data.columns]
 
         return resulting_gopro_data.values, gopro_prefixed_columns
 

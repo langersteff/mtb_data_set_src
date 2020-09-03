@@ -16,20 +16,22 @@ class MtbDataProviderGarmin(MtbDataProviderBase):
     def get_columns(self):
         return ['timestamp', 'distance', 'speed', 'heart_rate', 'altitude', 'SensorHeading', 'SensorAccelerationX_HD', 'SensorAccelerationY_HD', 'SensorAccelerationZ_HD', LATITUDE_KEY, LONGITUDE_KEY]
 
-    def create_mapped_data(self, input_filename, _):
-        file_name = '../data/' + input_filename
+    def create_mapped_data(self, input_file_name, _):
+        file_name = '../data/' + input_file_name
         data = self.convert_and_read_fit_file(file_name)
         data = self.filter_data(data, self.speed_threshold)
         data = self.split_hd_values(data)
         data = self.get_values_for(data, self.get_columns()[1:], prepend_timestamp=True)
+        # Save tmp file, this is needed for syncing the gopro data through pandas
+        np.savetxt("../data/" + input_file_name + '-tmp.csv', data, delimiter=",", header=','.join(self.get_columns()), fmt='"%s"', comments='')
         return data
 
-    def convert_and_read_fit_file(self, filename):
-        print("Converting Garmin .fit file", filename + ".fit")
+    def convert_and_read_fit_file(self, file_name):
+        print("Converting Garmin .fit file", file_name + ".fit")
         converter = os.path.abspath("../FitSDKRelease_21.16.00/java/FitCSVTool.jar")
-        filepath = os.path.abspath(filename + ".fit")
+        filepath = os.path.abspath(file_name + ".fit")
         subprocess.run(["java", "-jar", converter,  filepath])
-        data = pd.read_csv(filename + ".csv", low_memory=False)
+        data = pd.read_csv(file_name + ".csv", low_memory=False)
         datav = data.query("Message == 'record'").values
         return datav
 

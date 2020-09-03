@@ -33,9 +33,9 @@ class MtbDataProviderWebApis(MtbDataProviderBase):
         'trailforks_wet_weather', 'trailforks_season', 'trailforks_condition', 'trailforks_difficulty_votes',
         'trailforks_difficulty_user_avg', 'trailforks_family_friendly', 'trailforks_amtb-rating', 'trailforks_activitytypes']
 
-    def create_mapped_data(self, _, garmin_Data):
-        latitudes = garmin_Data[:, -2]
-        longitudes = garmin_Data[:, -1]
+    def create_mapped_data(self, _, garmin_data):
+        latitudes = garmin_data[:, -2]
+        longitudes = garmin_data[:, -1]
         top_left, bottom_right = self.get_bounding_box_for_recording(latitudes, longitudes, padding=0.0)
         response_openstreetmap = self.fetch_area_from_openstreetmap(top_left, bottom_right)
         response_trailforks = self.fetch_area_from_trailforks(top_left, bottom_right)

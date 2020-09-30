@@ -46,9 +46,9 @@ class MtbDataProviderWebApis(MtbDataProviderBase):
         return data
 
     def get_bounding_box_for_recording(self, latitudes, longitudes, padding=0.):
-        min_latitude = np.min(latitudes)
+        min_latitude = np.min(latitudes[np.nonzero(latitudes)])
         max_latitude = np.max(latitudes)
-        min_longitude = np.min(longitudes)
+        min_longitude = np.min(longitudes[np.nonzero(longitudes)])
         max_longitude = np.max(longitudes)
 
         top_left = (max_latitude + padding, min_longitude - padding)
@@ -113,6 +113,7 @@ class MtbDataProviderWebApis(MtbDataProviderBase):
         return datas
 
     def find_meta_data_for_recording(self, latitudes, longitudes, openstreetmap_meta, trailforks_meta, distance_threshold=10, fill_empties=2):
+        print("Mapping Meta Data from Web APIs...")
         closest_items = []
 
         last_latitude = 0

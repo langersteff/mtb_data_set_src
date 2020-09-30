@@ -11,7 +11,7 @@ class MtbDataSet:
     def __init__(self):
         super().__init__()
 
-        self.data_provider_garmin = MtbDataProviderGarmin(speed_threshold = 1)
+        self.data_provider_garmin = MtbDataProviderGarmin(speed_threshold = .5)
         self.data_provider_web_apis = MtbDataProviderWebApis()
         self.data_provider_gopro = MtbDataProviderGopro()
 
@@ -32,7 +32,7 @@ class MtbDataSet:
         gopro_headers = self.data_provider_gopro.get_columns()
 
         data = None
-        headers = np.hstack(["input_filename", "rider_id", garmin_headers, web_apis_headers, gopro_headers])
+        headers = np.hstack(["input_filename", "rider_id", "trail_name", garmin_headers, web_apis_headers, gopro_headers])
 
         for input_filename in input_filenames:
 
@@ -47,7 +47,8 @@ class MtbDataSet:
 
             input_file_column = np.asarray([input_filename] * len(garmin_data)).reshape(len(garmin_data), 1)
             rider_id_column = np.asarray([rider_id] * len(garmin_data)).reshape(len(garmin_data), 1)
-            data_block = np.hstack([input_file_column, rider_id_column, garmin_data, web_apis_data, gopro_data])
+            trail_name_column = np.asarray([trail_name] * len(garmin_data)).reshape(len(garmin_data), 1)
+            data_block = np.hstack([input_file_column, rider_id_column, trail_name_column, garmin_data, web_apis_data, gopro_data])
             if data is not None:
                 data = np.vstack([data, data_block])
             else:

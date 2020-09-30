@@ -5,3 +5,4 @@ FitSDKRelease_21.16.00/
 config.py
 data/
 data/*
+.ipynb_checkpoints/

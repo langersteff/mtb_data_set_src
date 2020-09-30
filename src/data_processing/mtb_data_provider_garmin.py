@@ -14,7 +14,7 @@ class MtbDataProviderGarmin(MtbDataProviderBase):
         self.speed_threshold = speed_threshold
 
     def get_columns(self):
-        return ['timestamp', 'distance', 'speed', 'heart_rate', 'altitude', 'SensorHeading', 'SensorAccelerationX_HD', 'SensorAccelerationY_HD', 'SensorAccelerationZ_HD', LATITUDE_KEY, LONGITUDE_KEY]
+        return ['timestamp', 'distance', 'SensorSpeed', 'heart_rate', 'altitude', 'SensorHeading', 'SensorAccelerationX_HD', 'SensorAccelerationY_HD', 'SensorAccelerationZ_HD', LATITUDE_KEY, LONGITUDE_KEY]
 
     def create_mapped_data(self, input_file_name, _):
         file_name = '../data/' + input_file_name
@@ -57,7 +57,7 @@ class MtbDataProviderGarmin(MtbDataProviderBase):
                         current_object[column] = float(row[i+1])
 
             # SPEED THRESHOLD
-            if current_object['speed'] >= speed_threshold:
+            if 'SensorSpeed' in current_object and current_object['SensorSpeed'] >= speed_threshold:
                 result[current_timestamp] = current_object
 
         return result
@@ -67,7 +67,7 @@ class MtbDataProviderGarmin(MtbDataProviderBase):
         for timestamp, row in data.items():
 
             if 'SensorAccelerationX_HD' in row:
-                if (type(row['SensorAccelerationX_HD']) is str):
+                if (type(row['SensorAccelerationX_HD']) is str and '|' in row['SensorAccelerationX_HD']):
                     hd_values_x = row['SensorAccelerationX_HD'].split('|')
                     hd_values_y = row['SensorAccelerationY_HD'].split('|')
                     hd_values_z = row['SensorAccelerationZ_HD'].split('|')

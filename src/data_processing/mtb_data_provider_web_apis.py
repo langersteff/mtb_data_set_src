@@ -143,8 +143,8 @@ class MtbDataProviderWebApis(MtbDataProviderBase):
             # Loop through OSM data
             for _, position_meta in openstreetmap_meta.items():
 
-                    if 'mtb:scale' not in position_meta.keys() and 'mtb:type' not in position_meta.keys():
-                        continue
+                    # if 'mtb:scale' not in position_meta.keys() and 'mtb:type' not in position_meta.keys():
+                    #     continue
 
                     # Check if the item is in distance
                     dest = (position_meta['lat'], position_meta['lon'])
